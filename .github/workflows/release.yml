@@ -44,15 +44,15 @@ jobs:
           version: latest
           args: merge
 
-      - name: Git push changelog
-        run: |
-          git config --global user.name "${{ vars.TF_DEVEX_CI_COMMIT_AUTHOR }}"
-          git config --global user.email "${{ vars.TF_DEVEX_CI_COMMIT_EMAIL }}"
-          git add .
-          git commit -a -m "Update changelog"
-          git push "https://${{ vars.TF_DEVEX_CI_COMMIT_AUTHOR }}:${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+      # - name: Git push changelog
+      #   run: |
+      #     git config --global user.name "${{ vars.TF_DEVEX_CI_COMMIT_AUTHOR }}"
+      #     git config --global user.email "${{ vars.TF_DEVEX_CI_COMMIT_EMAIL }}"
+      #     git add .
+      #     git commit -a -m "Update changelog"
+      #     git push "https://${{ vars.TF_DEVEX_CI_COMMIT_AUTHOR }}:${{ secrets.TF_DEVEX_COMMIT_GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
 
-  release-tag:
+  release-tag: 
     needs: changelog
     runs-on: ubuntu-latest
     steps:
