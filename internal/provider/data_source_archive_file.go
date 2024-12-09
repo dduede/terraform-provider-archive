@@ -62,6 +62,10 @@ func (d *archiveFileDataSource) Schema(ctx context.Context, req datasource.Schem
 							Description: "Set this as the filename when declaring a `source`.",
 							Required:    true,
 						},
+						"base64decode_content_before_write": schema.BoolAttribute{
+							Description: "Decode the content before writing it to the archive.",
+							Optional:    true,
+						},
 					},
 				},
 				Validators: []validator.Set{
@@ -248,7 +252,16 @@ func archive(ctx context.Context, model fileModel) error {
 		model.Source.ElementsAs(ctx, &elements, false)
 
 		for _, elem := range elements {
-			content[elem.Filename.ValueString()] = []byte(elem.Content.ValueString())
+			if elem.Base64DecodeContentBeforeWrite.ValueBool() {
+				dataBase64, err := base64.StdEncoding.DecodeString(elem.Content.ValueString())
+				if err != nil {
+					return fmt.Errorf("error archiving content: %s", err)
+				}
+				content[elem.Filename.ValueString()] = dataBase64
+			} else {
+				content[elem.Filename.ValueString()] = []byte(elem.Content.ValueString())
+			}
+
 		}
 
 		if err := archiver.ArchiveMultiple(content); err != nil {
@@ -347,8 +360,9 @@ type fileModel struct {
 }
 
 type sourceModel struct {
-	Content  types.String `tfsdk:"content"`
-	Filename types.String `tfsdk:"filename"`
+	Content                        types.String `tfsdk:"content"`
+	Filename                       types.String `tfsdk:"filename"`
+	Base64DecodeContentBeforeWrite types.Bool   `tfsdk:"base64decode_content_before_write"`
 }
 
 type fileChecksums struct {

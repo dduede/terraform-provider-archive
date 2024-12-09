@@ -236,6 +236,28 @@ func TestDataSource_UpgradeFromVersion2_2_0_SourceConfig(t *testing.T) {
 	})
 }
 
+func TestDataSource_SourceConfig_b64(t *testing.T) {
+	td := t.TempDir()
+
+	f := filepath.Join(td, "zip_file_acc_test_b64.zip")
+
+	var fileSize string
+
+	r.ParallelTest(t, r.TestCase{
+		Steps: []r.TestStep{
+			{
+				ProtoV5ProviderFactories: protoV5ProviderFactories(),
+				Config:                   testAccArchiveFileMultiSourceConfigBase64("zip", f),
+				Check: r.ComposeTestCheckFunc(
+					testAccArchiveFileSize(f, &fileSize),
+					r.TestCheckResourceAttrPtr("data.archive_file.foo", "output_size", &fileSize),
+					r.TestCheckResourceAttr("data.archive_file.foo", "output_sha", "4ff425cc4e44472dbeb827ce29cd341eea2ebcc2"),
+				),
+			},
+		},
+	})
+}
+
 func testAccArchiveFileSize(filename string, fileSize *string) r.TestCheckFunc {
 	return func(s *terraform.State) error {
 		*fileSize = ""
@@ -314,6 +336,25 @@ data "archive_file" "foo" {
   source {
     filename = "content_2.txt"
     content = "This is the content for content_2.txt"
+  }
+  output_path = "%s"
+}
+`, format, filepath.ToSlash(outputPath))
+}
+
+func testAccArchiveFileMultiSourceConfigBase64(format, outputPath string) string {
+	return fmt.Sprintf(`
+data "archive_file" "foo" {
+  type = "%s"
+  source {
+    filename = "content_1.txt"
+    content = base64encode("This is the content for content_1.txt")
+	base64decode_content_before_write = true
+  }
+  source {
+    filename = "content_2.txt"
+    content = base64encode("This is the content for content_2.txt")
+	base64decode_content_before_write = true
   }
   output_path = "%s"
 }
